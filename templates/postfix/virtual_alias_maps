@@ -1,0 +1,3 @@
+{% for domain, user in kopano__postfix__alias_maps.items() %}
+{{ domain }} {{ user }}
+{% endfor %}

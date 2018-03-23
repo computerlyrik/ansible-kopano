@@ -1,0 +1,65 @@
+---
+- name: "[http_apache2] install http packages"
+  apt:
+    package:
+      - apache2
+      - libapache2-mod-php
+
+- name: "[http_apache2] enable phpmod kopano"
+  command: phpenmod kopano
+  register: phpenmod_kopano
+  changed_when: phpenmod_kopano.rc != 0
+  notify: reload apache2
+
+- name: "[http_apache2] enable kopano site"
+  command: a2ensite kopano-webapp
+  args:
+    creates: /etc/apache2/sites-enabled/kopano-webapp.conf
+  notify: reload apache2
+
+- name: "[http_apache2] enable apache ssl"
+  block:
+    - name: "[http_apache2] enable ssl module"
+      command: a2enmod ssl
+      notify: reload apache2
+      register: enable_apache_ssl_module
+      changed_when: enable_apache_ssl_module.rc != 0 and enable_apache_ssl_module.stdout == ''
+
+    - name: "[http_apache2] set up SSL Cert"
+      lineinfile:
+        path: /etc/apache2/sites-available/default-ssl.conf
+        line: "SSLCertificateFile      {{ kopano__ssl__cert_file }}"
+        regexp: '^\s*SSLCertificateFile.*'
+        insertafter: '^\s+SSLEngine on'
+      notify: reload apache2
+
+    - name: "[http_apache2] set up SSL key"
+      lineinfile:
+        path: /etc/apache2/sites-available/default-ssl.conf
+        line: "SSLCertificateKeyFile      {{ kopano__ssl__key_file }}"
+        regexp: '^\s*SSLCertificateKeyFile.*'
+        insertafter: '^\s+SSLEngine on'
+      notify: reload apache2
+
+    - name: "[http_apache2] Redirect all traffic to https"
+      lineinfile:
+        dest: /etc/apache2/sites-available/000-default.conf
+        line: "Redirect / https://{{ ansible_fqdn }}/"
+        insertafter: DocumentRoot
+        backup: yes
+      notify: reload apache2
+
+    - name: "[http_apache2] enable ssl site"
+      shell: a2ensite default-ssl
+      args:
+        creates: /etc/apache2/sites-enabled/default-ssl.conf
+      notify: reload apache2
+
+  when: kopano__ssl__enable
+
+
+- name: "[http_apache2] apache2 service"
+  service:
+    name: apache2
+    state: started
+    enabled: yes

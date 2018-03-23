@@ -1,0 +1,44 @@
+---
+- name: "[kopano-core] add repository key"
+  apt_key:
+    url: "{{ kopano__core__repository_key_url }}"
+
+- name: "[kopano-core] add repository"
+  apt_repository:
+    repo: "deb {{ kopano__core__repository_url }} ./"
+  notify: update apt cache
+
+- meta: flush_handlers
+
+- name: "[kopano-core] install packages"
+  apt:
+    name: "{{ kopano__core__packages }}"
+
+- name: "[kopano-core] Create database"
+  mysql_db:
+    db: "{{ kopano__mysql_database }}"
+
+- name: "[kopano-core] Create database user"
+  mysql_user:
+    user: "{{ kopano__mysql_user }}"
+    password: "{{ kopano__mysql_password }}"
+    priv: "{{ kopano__mysql_database }}.*:ALL"
+
+- name: "[kopano-core] Set up kopano-server"
+  import_tasks: kopano-server.yml
+
+- name: "[kopano-core] Set up kopano-dagent"
+  import_tasks: kopano-dagent.yml
+
+- name: "[kopano-core] Set up kopano-gateway"
+  import_tasks: kopano-gateway.yml
+
+- name: "[kopano-core] Set up kopano-search"
+  import_tasks: kopano-search.yml
+
+- name: "[kopano-core] Flush handlers to get kopano components up to date"
+  meta: flush_handlers
+
+- name: "[kopano-core] Create initial user"
+  import_tasks: tools/kopano-user.yml
+  when: kopano__user_initialize

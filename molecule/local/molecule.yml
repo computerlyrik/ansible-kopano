@@ -1,0 +1,25 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+platforms:
+  - name: kopano.test
+    box: ubuntu/xenial64
+    privileged: True
+    memory: 4096
+    cpus: 2
+lint:
+  name: yamllint
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+scenario:
+  name: local
+verifier:
+  name: testinfra
+  lint:
+    name: flake8

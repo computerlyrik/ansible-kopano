@@ -1,0 +1,74 @@
+---
+# defaults file for computerlyrik.kopano
+
+####################
+# General Settings #
+####################
+kopano__serial_key:
+kopano__version: 8.7
+
+#################
+# DB Connection #
+#################
+kopano__mysql_database: kopano
+kopano__mysql_user: kopano
+kopano__mysql_password:
+
+################
+# SSL Settings #
+################
+kopano__ssl__cert_file:
+kopano__ssl__key_file:
+
+################
+# Initial User #
+################
+kopano__user_login:
+kopano__user_fullname: "{{ kopano__user_login }}"
+kopano__user_password:
+kopano__user_email:
+
+###############
+# Kopano CORE #
+###############
+kopano__core__enable: true
+
+#################
+# Kopano SERVER #
+#################
+# method syslog by default
+kopano__server__logfile:  # e.g. /var/log/kopano/server.log
+
+#################
+# Kopano WEBAPP #
+#################
+kopano__webapp__enable: true
+kopano__webapp__title: Private Kopano WebApp
+
+#################
+# Z-PUSH Module #
+#################
+kopano__z_push__enable: true
+
+
+#########################
+# Postfix configuration #
+#########################
+# User Maps and sasl auth
+kopano__postfix__alias_maps:
+kopano__postfix__configuration_enable: "{{ kopano__postfix__alias_maps is not none }}"
+
+################
+# Kopano SPAMD #
+################
+kopano__spamd__enable: "{{ kopano__postfix__configuration_enable }}"
+
+kopano__spamd__amavisd__user: amavis
+kopano__spamd__amavisd__group: amavis
+
+# Add other domains to local_domains_acl, format: example.com
+kopano__spamd__amavisd__additional_local_domains: []
+
+# Possible to setup a logfile where spam and ham learning gets through, otherwise logging goes to syslog or systemd
+# e.g. /var/log/inotify-spamlearn.log
+kopano__spamd__inotify_spamlearn__logfile:

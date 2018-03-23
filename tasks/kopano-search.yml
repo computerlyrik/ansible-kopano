@@ -1,0 +1,6 @@
+---
+- name: "[kopano-search] service"
+  service:
+    name: kopano-search
+    state: started
+    enabled: yes

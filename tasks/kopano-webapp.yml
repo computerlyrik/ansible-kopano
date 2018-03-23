@@ -1,0 +1,27 @@
+---
+- name: "[kopano-webapp] add repository key"
+  apt_key:
+    url: "{{ kopano__webapp__repository_key_url }}"
+
+- name: "[kopano-webapp] add repository"
+  apt_repository:
+    repo: "deb {{ kopano__webapp__repository_url }} ./"
+
+- name: "[kopano-webapp] install package"
+  apt:
+    name: kopano-webapp
+  notify: "reload {{ kopano__webapp__http_server }}"
+
+- name: "[kopano-webapp] set WEBAPP_TITLE"
+  lineinfile:
+    path: /etc/kopano/webapp/config.php
+    regexp: '^(\s+)define\("WEBAPP_TITLE'
+    line: "\\1define(\"WEBAPP_TITLE\", '{{ kopano__webapp__title }}');"
+    backrefs: yes
+
+- name: "[kopano-webapp] Install http server"
+  include_tasks: tools/http_{{ kopano__webapp__http_server }}.yml
+  when: kopano__webapp__http_server is not none
+
+- name: "[kopano-webapp] Set up kopano-spooler"
+  include_tasks: kopano-spooler.yml

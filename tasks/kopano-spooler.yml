@@ -1,0 +1,6 @@
+---
+- name: "[kopano-spooler] service"
+  service:
+    name: kopano-spooler
+    state: started
+    enabled: yes

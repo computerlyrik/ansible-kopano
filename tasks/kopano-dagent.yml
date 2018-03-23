@@ -1,0 +1,6 @@
+---
+- name: "[kopano-dagent] service"
+  service:
+    name: kopano-dagent
+    state: started
+    enabled: yes

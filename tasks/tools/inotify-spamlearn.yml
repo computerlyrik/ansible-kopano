@@ -1,0 +1,79 @@
+---
+- name: "[inotify-spamlearn] install required packages"
+  apt:
+    name:
+      - python-setuptools
+      - python3-pip
+      - python3-setuptools
+      - git-core
+
+- name: "[inotify-spamlearn] install inotify dependencies"
+  pip:
+    name: inotify
+    executable: /usr/bin/pip3
+  become: True
+
+- name: "[inotify-spamlearn] checkout"
+  git:
+    repo: 'https://github.com/bkram/inotify-spamlearn.git'
+    dest: "{{ kopano__spamd__inotify_spamlearn__checkout_directory }}"
+    version: "{{ kopano__spamd__inotify_spamlearn__version }}"
+    update: no
+
+- name: "[inotify-spamlearn] configure run user"
+  lineinfile:
+    path: "{{ kopano__spamd__inotify_spamlearn__checkout_directory }}/inotify-spamlearn.service"
+    regexp: ^User
+    line: "User={{ kopano__spamd__inotify_spamlearn__user }}"
+
+- name: "[inotify-spamlearn] configure run group"
+  lineinfile:
+    path: "{{ kopano__spamd__inotify_spamlearn__checkout_directory }}/inotify-spamlearn.service"
+    regexp: ^Group
+    line: "Group={{ kopano__spamd__inotify_spamlearn__group }}"
+
+- name: "[inotify-spamlearn] copy service script"
+  copy:
+    remote_src: yes
+    src: "{{ kopano__spamd__inotify_spamlearn__checkout_directory }}/inotify-spamlearn.service"
+    dest: "/etc/systemd/system/"
+  notify: restart inotify-spamlearn
+
+- name: "[inotify-spamlearn] create logfile"
+  file:
+    name: "{{ kopano__spamd__inotify_spamlearn__logfile }}"
+    owner: "{{ kopano__spamd__inotify_spamlearn__user }}"
+    group: "{{ kopano__spamd__inotify_spamlearn__group }}"
+    mode: 0640
+  when: kopano__spamd__inotify_spamlearn__logfile is not none
+
+- name: "[inotify-spamlearn] configure logfile"
+  lineinfile:
+    path: "{{ kopano__spamd__inotify_spamlearn__checkout_directory }}/inotify-spamlearn.cfg"
+    regexp: ^logfile
+    line: "logfile = {{ kopano__spamd__inotify_spamlearn__logfile | default('') }}"
+
+- name: "[inotify-spamlearn] copy config file script"
+  copy:
+    remote_src: yes
+    src: "{{ kopano__spamd__inotify_spamlearn__checkout_directory }}/inotify-spamlearn.cfg"
+    dest: "/etc/kopano/"
+    mode: 0644
+  notify: restart inotify-spamlearn
+
+- name: "[inotify-spamlearn] copy executable"
+  copy:
+    remote_src: yes
+    src: "{{ kopano__spamd__inotify_spamlearn__checkout_directory }}/inotify-spamlearn.py"
+    dest: "/usr/local/sbin/"
+    owner: amavis
+    group: amavis
+    mode: 0755
+  notify: restart inotify-spamlearn
+
+# sudo journalctl -u inotify-spamlearn -f
+- name: "[inotify-spamlearn] service"
+  service:
+    name: inotify-spamlearn
+    state: started
+    enabled: yes

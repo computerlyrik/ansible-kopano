@@ -1,0 +1,51 @@
+---
+- name: Install and configure amavisd
+  import_tasks: tools/amavisd.yml
+
+- name: "[kopano-spamd] install package"
+  apt:
+    name: kopano-spamd
+  notify: restart kopano-spamd
+
+- name: "[kopano-spamd] create spam and ham directories"
+  file:
+    name: "/var/lib/kopano/spamd/{{ item }}"
+    owner: kopano
+    group: "{{ kopano__spamd__amavisd__group }}"
+    mode: 0770
+    state: directory
+  with_items:
+    - spam
+    - ham
+  notify: restart kopano-spamd
+
+- name: "[kopano-spamd] Add user kopano to amavisd group"
+  user:
+    name: kopano
+    groups: "{{ kopano__spamd__amavisd__group }}"
+    append: yes
+  notify: restart kopano-spamd
+
+- name: "[kopano-spamd] config from example - spamd.cfg"
+  copy:
+    src: /usr/share/doc/kopano/example-config/spamd.cfg
+    remote_src: yes
+    dest: /etc/kopano/spamd.cfg
+    force: no
+
+- name: "[kopano-spamd] Set run group for spamd on temporary location"
+  lineinfile:
+    path: /etc/kopano/spamd.cfg
+    regexp: 'run_as_group'
+    line: "run_as_group = {{ kopano__spamd__amavisd__group }}"
+    insertafter: '^run_as_user'
+  changed_when: no
+
+- name: "[kopano-spamd] service"
+  service:
+    name: kopano-spamd
+    state: started
+    enabled: yes
+
+- name: Install and configure inotify-spamlearn
+  import_tasks: tools/inotify-spamlearn.yml

@@ -1,0 +1,15 @@
+---
+- name: "[kopano-user] check for users"
+  command: kopano-cli --list-users
+  register: kopano_users
+  changed_when: false
+  check_mode: no
+
+- name: "[kopano-user] debug users list"
+  debug:
+    var: kopano_users
+    verbosity: 2
+
+- name: "[kopano-user] create user"
+  command: "kopano-cli --create -u {{ kopano__user_login }} --fullname '{{ kopano__user_fullname }}' --password {{ kopano__user_password }} --email {{ kopano__user_email }}"
+  when: kopano__user_login not in kopano_users.stdout

@@ -1,0 +1,26 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    kopano__user_login: john
+    kopano__user_password: doe
+    kopano__user_email: john.doe@example.com
+    kopano__postfix__configuration_enable: true
+    kopano__spamd__amavisd__postfix_shortcut: true
+  pre_tasks:
+    - name: prepare mailname
+      lineinfile:
+        path: /etc/mailname
+        line: mail.example.com
+        create: yes
+  tasks:
+
+    - name: set up postfix
+      include_role:
+        name: computerlyrik.kopano
+        tasks_from: tools/postfix.yml
+
+    - name: set up spamassassin
+      include_role:
+        name: computerlyrik.kopano
+        tasks_from: tools/amavisd.yml

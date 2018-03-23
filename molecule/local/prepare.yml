@@ -1,0 +1,17 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Install python for Ansible
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+      changed_when: false
+    - name: install mysql server
+      apt:
+        name: mysql-server
+    - name: start mysql server service
+      service:
+        name: mysql
+        state: started
+        enabled: true

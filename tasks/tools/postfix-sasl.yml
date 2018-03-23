@@ -1,0 +1,56 @@
+---
+- name: "[postfix-sasl] install saslauthd"
+  apt:
+    name: sasl2-bin
+
+- name: "[postfix-sasl] Enable saslauthd"
+  lineinfile:
+    dest: /etc/default/saslauthd
+    line: "START=yes"
+    regexp: ^START
+    backup: yes
+  notify: restart saslauthd
+
+- name: "[postfix-sasl] Enable postfix chroot socket"
+  lineinfile:
+    dest: /etc/default/saslauthd
+    line: 'OPTIONS="-c -m /var/spool/postfix/var/run/saslauthd -r"'
+    regexp: ^OPTIONS
+    backup: yes
+  notify: restart saslauthd
+
+- name: "[postfix-sasl] Set RIMAP mechanism to auth against imap"
+  lineinfile:
+    dest: /etc/default/saslauthd
+    line: 'MECHANISMS="rimap"'
+    regexp: ^MECHANISMS
+    backup: yes
+  notify: restart saslauthd
+
+- name: "[postfix-sasl] Set Options 1"
+  lineinfile:
+    dest: /etc/default/saslauthd
+    line: 'MECH_OPTIONS="127.0.0.1"'
+    regexp: ^MECH_OPTIONS
+    backup: yes
+  notify: restart saslauthd
+
+- name: "[postfix-sasl] Set Options 2"
+  lineinfile:
+    dest: /etc/default/saslauthd
+    line: 'THREADS=0'
+    regexp: ^THREADS
+    backup: yes
+  notify: restart saslauthd
+
+- name: "[postfix-sasl] Add postfix to sasl group"
+  user: name=postfix
+        group=sasl
+        append=yes
+  notify: restart postfix
+
+- name: "[postfix-sasl] add smtpd => saslauthd bridge"
+  template:
+    src: postfix/sasl-smtpd.conf
+    dest: /etc/postfix/sasl/smtpd.conf
+  notify: Check postfix and restart

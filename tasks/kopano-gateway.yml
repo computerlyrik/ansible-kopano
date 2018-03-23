@@ -1,0 +1,100 @@
+---
+- name: "[kopano-gateway] [8.7] config from example - gateway.cfg"
+  copy:
+    src: /usr/share/doc/kopano/example-config/gateway.cfg
+    remote_src: yes
+    dest: /etc/kopano/gateway.cfg
+    force: no
+  when: kopano__version is version_compare('8.7', '>=', strict=True)
+
+- name: "[kopano-gateway] disable plaintext auth"
+  lineinfile:
+    dest: /etc/kopano/gateway.cfg
+    line: "disable_plaintext_auth = yes"
+    regexp: ^\#?disable_plaintext_auth
+    backup: yes
+  notify: restart kopano-gateway
+
+# Support different syntaxes for 8.6 and 8.7
+- name: "[kopano-gateway] [8.7] set imap service"
+  lineinfile:
+    dest: /etc/kopano/gateway.cfg
+    line: "{{ 'imap_listen = *:143' if kopano__gateway__imap_enable else '#imap_listen =' }}"
+    regexp: ^\#?imap_listen
+    backup: yes
+  notify: restart kopano-gateway
+  when: kopano__version is version_compare('8.7', '>=', strict=True)
+
+- name: "[kopano-gateway] [8.6] set imap service - enable"
+  lineinfile:
+    dest: /etc/kopano/gateway.cfg
+    line: "{{ 'imap_enable = yes' if kopano__gateway__imap_enable else '#imap_enable = yes' }}"
+    regexp: ^\#?imap_enable
+    backup: yes
+  notify: restart kopano-gateway
+  when: kopano__version is version_compare('8.6', '<=', strict=True)
+
+- name: "[kopano-gateway] [8.6] set imap service - port"
+  lineinfile:
+    dest: /etc/kopano/gateway.cfg
+    line: "{{ 'imap_port = 143' if kopano__gateway__imap_enable else '#imap_port = 143' }}"
+    regexp: ^\#?imap_port
+    backup: yes
+  notify: restart kopano-gateway
+  when: kopano__version is version_compare('8.6', '<=', strict=True)
+
+
+- name: enable imap/pop ssl
+  block:
+    - name: "[kopano-gateway] configure SSL cert file"
+      lineinfile:
+        dest: /etc/kopano/gateway.cfg
+        line: "ssl_certificate_file = {{ kopano__ssl__cert_file }}"
+        regexp: ^.?ssl_certificate_file
+        backup: yes
+      notify: restart kopano-gateway
+
+    - name: "[kopano-gateway] configure SSL key file"
+      lineinfile:
+        dest: /etc/kopano/gateway.cfg
+        line: "ssl_private_key_file = {{ kopano__ssl__key_file }}"
+        regexp: ^.?ssl_private_key_file
+        backup: yes
+      notify: restart kopano-gateway
+
+    # Support different syntaxes for 8.6 and 8.7
+    - name: "[kopano-gateway] [8.7] set imaps service"
+      lineinfile:
+        dest: /etc/kopano/gateway.cfg
+        line: "{{ 'imaps_listen = *:993' if kopano__gateway__imaps_enable else '#imaps_listen = ' }}"
+        regexp: ^\#?imaps_listen
+        backup: yes
+      notify: restart kopano-gateway
+      when: kopano__version is version_compare('8.7', '>=', strict=True)
+
+    - name: "[kopano-gateway] [8.6] set imaps service - enable"
+      lineinfile:
+        dest: /etc/kopano/gateway.cfg
+        line: "{{ 'imaps_enable = yes' if kopano__gateway__imaps_enable else '#imaps_enable = yes' }}"
+        regexp: ^\#?imaps_enable
+        backup: yes
+      notify: restart kopano-gateway
+      when: kopano__version is version_compare('8.6', '<=', strict=True)
+
+    - name: "[kopano-gateway] [8.6] set imaps service - port"
+      lineinfile:
+        dest: /etc/kopano/gateway.cfg
+        line: "{{ 'imaps_port = 993' if kopano__gateway__imaps_enable else '#imaps_port = 993' }}"
+        regexp: ^\#?imaps_port
+        backup: yes
+      notify: restart kopano-gateway
+      when: kopano__version is version_compare('8.6', '<=', strict=True)
+
+  when: kopano__ssl__enable
+
+
+- name: "[kopano-gateway] service"
+  service:
+    name: kopano-gateway
+    state: started
+    enabled: yes

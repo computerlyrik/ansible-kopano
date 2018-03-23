@@ -1,0 +1,10 @@
+parseable: true
+quiet: true
+skip_list:
+  - 602
+  - 503
+  - 305
+  - 204
+  - 502
+use_default_rules: true
+verbosity: 1

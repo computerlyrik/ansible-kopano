@@ -1,0 +1,14 @@
+---
+sudo: required
+language: python
+services:
+  - docker
+before_install:
+  - sudo apt-get -qq update
+install:
+  - pip install 'molecule[docker]'
+script:
+  - cd ../..
+  - mv $TRAVIS_BUILD_DIR computerlyrik.kopano
+  - cd computerlyrik.kopano
+  - molecule --env-file molecule/default/env_travis.yml test

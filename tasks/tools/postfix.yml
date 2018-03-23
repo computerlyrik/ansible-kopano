@@ -1,0 +1,26 @@
+---
+# execution needs python2-netaddr installed on localhost (Ansible controller)
+
+- name: "[postfix-config] install required package"
+  apt:
+    name: postfix-mysql
+
+- name: "[postfix-config] template virtual alias maps"
+  template:
+    src: postfix/virtual_alias_maps
+    dest: /etc/postfix/virtual_alias_maps
+  register: kopano_postfix_alias_maps_file
+  when: kopano__postfix__alias_maps is not none
+
+- name: "[postfix-config] regenerate virtual alias maps"
+  shell: postmap /etc/postfix/virtual_alias_maps
+  when: kopano_postfix_alias_maps_file.changed
+  notify: Check postfix and restart
+
+- name: "[postfix-config] template virtual mailbox maps"
+  template:
+    src: postfix/virtual_mailbox_maps
+    dest: /etc/postfix/virtual_mailbox_maps.cf
+
+- name: Setup smtpd auth
+  import_tasks: "{{ role_path }}/tasks/tools/postfix-sasl.yml"

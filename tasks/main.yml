@@ -1,0 +1,43 @@
+---
+# tasks file for computerlyrik.kopano
+
+# Check Requirements
+- name: kopano__serial_key should be defined
+  assert:
+    that:
+      - kopano__serial_key is not none and kopano__serial_key != ''
+    msg: "Set the mandatory variable 'kopano__serial_key'"
+
+- name: kopano__mysql_password should be defined
+  assert:
+    that:
+      - kopano__mysql__password is not none and kopano__mysql_password != ''
+    msg: "Set the mandatory variable 'kopano__mysql_password'"
+
+- name: get installation requirements
+  apt:
+    name: apt-transport-https
+
+- name: Install kopano core
+  import_tasks: kopano-core.yml
+  when: kopano__core__enable
+
+
+- name: Install kopano webapp
+  import_tasks: kopano-webapp.yml
+  when: kopano__webapp__enable
+
+
+- name: Install z-push
+  import_tasks: z-push.yml
+  when: kopano__z_push__enable
+
+
+- name: Install and configure postfix
+  import_tasks: tools/postfix.yml
+  when: kopano__postfix__configuration_enable
+
+
+- name: Install and configure spamd
+  import_tasks: kopano-spamd.yml
+  when: kopano__spamd__enable

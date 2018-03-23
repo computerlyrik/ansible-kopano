@@ -1,0 +1,119 @@
+---
+- name: "[amavis] install spamassassin"
+  apt:
+    name: spamassassin
+    state: present
+  register: spamassassin_install
+
+- name: "[amavis] install clamav-daemon"
+  apt:
+    name: clamav-daemon
+    state: present
+  register: clamav_install
+
+- name: "[amavis] clamav-freshclam service"
+  service:
+    name: clamav-freshclam
+    state: started
+    enabled: yes
+
+- name: "[amavis] clamav-daemon service"
+  service:
+    name: clamav-daemon
+    state: started
+    enabled: yes
+
+- name: "[amavis] install pyzor"
+  apt:
+    name: pyzor
+    state: present
+  register: pyzor_install
+
+- name: "[amavis] initialize pyzor"
+  shell:
+    cmd: pyzor discover
+  when: pyzor_install.changed
+
+- name: "[amavis] install razor"
+  apt:
+    name: razor
+    state: present
+  register: razor_install
+
+- name: "[amavis] initialize razor-admin -create"
+  shell:
+    cmd: razor-admin -create
+  when: razor_install.changed
+
+- name: "[amavis] initialize razor-admin -register"
+  shell:
+    cmd: razor-admin -register
+  when: razor_install.changed
+
+- name: "[amavis] install amavisd-new"
+  apt:
+    name: amavisd-new
+    state: present
+  notify: Check postfix and restart
+
+- name: "[amavis] Add user clamav to group"
+  user:
+    name: clamav
+    groups: "{{ kopano__spamd__amavisd__group }}"
+    append: yes
+  notify: restart clamav-daemon
+
+- name: "[amavis] SHORTCUT amavisd-new-postfix"
+  block:
+    - debug:
+        msg: "MAKE SURE, THE CONFIG APPLIED BY amavisd-new-postfix IS PERSISTENT!"
+    - apt:
+        name: amavisd-new-postfix
+        state: present
+      notify: Check postfix and restart
+  when: kopano__spamd__amavisd__postfix_shortcut
+
+# Install filesupport packages for zip doc rar etc.
+
+- name: "[amavis] install antivirus-support packages"
+  apt:
+    name: "{{ kopano__spamd__amavisd__filesupport_packages }}"
+  notify: restart amavis
+
+# Working the amavis/conf.d directory
+
+- name: "[amavis] configure local domains"
+  lineinfile:
+    path: /etc/amavis/conf.d/05-domain_id
+    line: "@local_domains_acl = ( \".{{ kopano__spamd__amavisd__additional_local_domains | map('quote') | join('\", \".') }}\", \".$mydomain\" ); # Ansible managed"
+    regex: '^@local_domains_acl'
+  notify: restart amavis
+
+- name: "[amavis] enable spam and av checks for amavisd"
+  blockinfile:
+    path: /etc/amavis/conf.d/15-content_filter_mode
+    block: |
+      @bypass_spam_checks_maps = (
+         \%bypass_spam_checks, \@bypass_spam_checks_acl, \$bypass_spam_checks_re); # Ansible managed
+      @bypass_virus_checks_maps = (
+         \%bypass_virus_checks, \@bypass_virus_checks_acl, \$bypass_virus_checks_re); # Ansible managed
+    insertbefore: "^1; .*"
+  notify: restart amavis
+
+- name: "[amavis] Spam delivery"
+  block:
+    - name: "[amavis] disable quarantine for spam mails"
+      lineinfile:
+        path: /etc/amavis/conf.d/50-user
+        line: "$spam_quarantine_to = undef; # Ansible managed"
+        regex: '^\$spam_quarantine_to'
+        insertbefore: "^1; .*"
+      notify: restart amavis
+    - name: "[amavis] deliver spam mails to user"
+      lineinfile:
+        path: /etc/amavis/conf.d/50-user
+        line: "$final_spam_destiny = D_PASS; # Ansible managed"
+        regex: '^\$final_spam_destiny'
+        insertbefore: "^1; .*"
+      notify: restart amavis
+  when: kopano__spamd__amavisd__deliver_spam

@@ -1,0 +1,13 @@
+---
+# molecule --scenario-name local --env-file molecule/default/local/secret.yml test
+- name: Converge
+  hosts: all
+  become: true
+  roles:
+    - role: computerlyrik.kopano
+      vars:
+        kopano__user_login: john
+        kopano__user_password: doe
+        kopano__user_email: john.doe@example.com
+        kopano__postfix__configuration_enable: true
+        kopano__spamd__amavisd__postfix_shortcut: true

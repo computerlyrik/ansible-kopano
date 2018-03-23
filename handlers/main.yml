@@ -1,0 +1,55 @@
+---
+# handlers file for computerlyrik.kopano
+
+- name: update apt cache
+  apt:
+    update_cache: yes
+
+- name: restart kopano-server
+  service:
+    name: kopano-server
+    state: restarted
+
+- name: restart kopano-gateway
+  service:
+    name: kopano-gateway
+    state: restarted
+
+- name: reload apache2
+  service:
+    name: apache2
+    state: reloaded
+
+- name: Check postfix and restart
+  command: /usr/sbin/postfix -c /etc/postfix check
+  notify: ['restart postfix']
+
+
+- name: restart postfix
+  service:
+    name: postfix
+    state: restarted
+
+- name: restart saslauthd
+  service: name=saslauthd
+           state=restarted
+
+- name: restart clamav-daemon
+  service:
+    name: clamav-daemon
+    state: restarted
+
+- name: restart amavis
+  service:
+    name: amavis
+    state: restarted
+
+- name: restart inotify-spamlearn
+  service:
+    name: inotify-spamlearn
+    state: restarted
+
+- name: restart kopano-spamd
+  service:
+    name: kopano-spamd
+    state: restarted

@@ -1,0 +1,13 @@
+---
+# Currently only db user store supported
+- name: "create server.cfg"
+  template:
+    src: "server-minimal.cfg"
+    dest: "/etc/kopano/server.cfg"
+  notify: restart kopano-server
+
+- name: kopano-server service
+  service:
+    name: kopano-server
+    state: started
+    enabled: yes

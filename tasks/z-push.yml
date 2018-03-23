@@ -1,0 +1,18 @@
+---
+# https://wiki.z-hub.io/display/ZP/Installation
+
+- name: "[z-push] add repository key"
+  apt_key:
+    url: "http://repo.z-hub.io/z-push:/final/{{ kopano__repository_distribution }}/Release.key"
+
+- name: "[z-push] add repository"
+  apt_repository:
+    repo: "deb http://repo.z-hub.io/z-push:/final/{{ kopano__repository_distribution }}/ /"
+
+# z-push-backend-kopano and dependencies
+# apache site
+- name: "[z-push] install package"
+  apt:
+    package:
+      - z-push-kopano
+      - z-push-config-apache

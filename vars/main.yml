@@ -1,0 +1,87 @@
+---
+# vars file for computerlyrik.kopano
+################
+# SSL Settings #
+################
+# Make sure, both files defined
+kopano__ssl__enable: '{{
+	kopano__ssl__cert_file is not none
+	and kopano__ssl__key_file is not none }}'
+
+################
+# Initial User #
+################
+kopano__user_storage: db
+kopano__user_initialize: "{{
+	kopano__user_login is not none
+	and kopano__user_password is not none
+        and kopano__user_email is not none
+        and kopano__user_storage == 'db'}}"
+
+###################
+# Global Settings #
+###################
+
+kopano__repository_distribution: "{{ ansible_distribution }}_{{ ansible_distribution_version }}"
+
+###############
+# Kopano CORE #
+###############
+
+kopano__core__repository_url: "https://serial:{{ kopano__serial_key }}@download.kopano.io/supported/core:/{{ kopano__version }}/{{ kopano__repository_distribution }}/"
+kopano__core__repository_key_url: "https://serial:{{ kopano__serial_key }}@download.kopano.io/supported/core:/{{ kopano__version }}/{{ kopano__repository_distribution }}/Release.key"
+
+kopano__core__packages:
+  - kopano-server-packages
+  - mysql-server
+  - python-mysqldb
+
+#################
+# Kopano SERVER #
+#################
+
+kopano__server__imap_enable: '{{ kopano__gateway__imaps_enable or kopano__gateway__imap_enable }}'
+kopano__server__user_storage: db
+
+##################
+# Kopano GATEWAY #
+##################
+
+kopano__gateway__imap_enable: yes  # DO NOT Disable - needed by smtpd sasl auth. block with fw if needed
+kopano__gateway__imaps_enable: '{{ kopano__ssl__enable }}'
+
+#################
+# Kopano WEBAPP #
+#################
+
+kopano__webapp__repository_url: "https://serial:{{ kopano__serial_key }}@download.kopano.io/supported/webapp:/final/{{ kopano__repository_distribution }}/"
+kopano__webapp__repository_key_url: "https://serial:{{ kopano__serial_key }}@download.kopano.io/supported/webapp:/final/{{ kopano__repository_distribution }}/Release.key"
+kopano__webapp__http_server: apache2
+
+################
+# Kopano SPAMD #
+################
+
+# This enables an postfix configuration for amavisd-usage.
+# WARNING! Cannot be guaranteed to be persistent - please configure postfix on your own to your needs.
+# However this package generates a good template
+# CAN BREAK THE ROLE FUNCTIONALITY
+kopano__spamd__amavisd__postfix_shortcut: false
+
+# Kopano spamd
+kopano__spamd__amavisd__filesupport_packages:
+  - p7zip-full
+  - arj
+  - ripole
+  - arc
+  - cabextract
+  - unrar-free
+# By default, amavis discards and quarantines spam messages
+# Enable this setting to deliver the email, e.g. do filtering by headers
+kopano__spamd__amavisd__deliver_spam: true
+
+kopano__spamd__inotify_spamlearn__checkout_directory: /opt/inotify-spamlearn
+# known working
+kopano__spamd__inotify_spamlearn__version: 1bd69f4a1e706cf07b5562be58906b52208cdb9e
+kopano__spamd__inotify_spamlearn__user: "{{ kopano__spamd__amavisd__user }}"
+kopano__spamd__inotify_spamlearn__group: "{{ kopano__spamd__amavisd__group }}"

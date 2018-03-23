@@ -1,0 +1,99 @@
+---
+
+- name: "[kopano-server] [8.7] config from example - server.cfg"
+  shell: gunzip -c /usr/share/doc/kopano/example-config/server.cfg.gz > /etc/kopano/server.cfg
+  args:
+    creates: /etc/kopano/server.cfg
+  when: kopano__version is version_compare('8.7', '>=', strict=True)
+
+- name: "[kopano-server] setup mysql database"
+  lineinfile:
+    dest: /etc/kopano/server.cfg
+    line: "mysql_database = {{ kopano__mysql_database }}"
+    regexp: ^\#?mysql_database
+    backup: yes
+  notify: restart kopano-server
+
+- name: "[kopano-server] configure mysql username"
+  lineinfile:
+    dest: /etc/kopano/server.cfg
+    line: "mysql_user = {{ kopano__mysql_user }}"
+    regexp: ^\#?mysql_user
+    backup: yes
+  notify: restart kopano-server
+
+- name: "[kopano-server] configure mysql password"
+  lineinfile:
+    dest: /etc/kopano/server.cfg
+    line: "mysql_password = {{ kopano__mysql_password }}"
+    regexp: ^\#?mysql_password
+    backup: yes
+  notify: restart kopano-server
+
+# Currently only db user store supported
+- name: "[kopano-server] setup user plugin"
+  lineinfile:
+    dest: /etc/kopano/server.cfg
+    line: "user_plugin = db"
+    regexp: ^\#?user_plugin =
+    backup: yes
+  when: kopano__server__user_storage == 'db'
+  notify: restart kopano-server
+
+- name: "[kopano-server] logging setup - logfile"
+  block:
+
+    - name: "[kopano-server] enable logfile"
+      lineinfile:
+        dest: /etc/kopano/server.cfg
+        line: "log_method = file"
+        regexp: ^\#?log_method
+        backup: yes
+      notify: restart kopano-server
+
+    - name: "[kopano-server] configure logfile"
+      lineinfile:
+        dest: /etc/kopano/server.cfg
+        line: "log_file = {{ kopano__server__logfile }}"
+        regexp: ^\#?log_file
+        backup: yes
+      notify: restart kopano-server
+
+  when: kopano__server__logfile|default(False)
+
+
+- name: "[kopano-server] logging setup - syslog"
+  block:
+
+    - name: "[kopano-server] enable syslog"
+      lineinfile:
+        dest: /etc/kopano/server.cfg
+        line: "log_method = syslog"
+        regexp: ^\#?log_method
+        backup: yes
+      notify: restart kopano-server
+
+    - name: "[kopano-server] disable logfile"
+      lineinfile:
+        dest: /etc/kopano/server.cfg
+        line: "#log_file ="
+        regexp: ^\#?log_file
+        backup: yes
+      notify: restart kopano-server
+
+  when: not kopano__server__logfile|default(False)
+
+- name: "[kopano-server] enable imap"
+  lineinfile:
+    dest: /etc/kopano/server.cfg
+    line: disabled_features = pop3
+    regexp: ^\#?disabled_features
+    backup: yes
+  notify: restart kopano-server
+  when: kopano__server__imap_enable
+
+- name: "[kopano-server] service"
+  service:
+    name: kopano-server
+    state: started
+    enabled: yes
