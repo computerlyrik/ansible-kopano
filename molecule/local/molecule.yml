@@ -20,6 +20,7 @@ provisioner:
 scenario:
   name: local
 verifier:
+  enabled: false
   name: testinfra
   lint:
     name: flake8
