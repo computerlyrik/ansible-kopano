@@ -39,6 +39,11 @@ kopano__core__enable: true
 # method syslog by default
 kopano__server__logfile:  # e.g. /var/log/kopano/server.log
 
+##################
+# Kopano Gateway #
+##################
+kopano__gateway__disable_plaintext_auth: true
+
 #################
 # Kopano WEBAPP #
 #################

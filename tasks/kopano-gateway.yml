@@ -10,7 +10,7 @@
 - name: "[kopano-gateway] disable plaintext auth"
   lineinfile:
     dest: /etc/kopano/gateway.cfg
-    line: "disable_plaintext_auth = yes"
+    line: "disable_plaintext_auth = {{ 'yes' if kopano__gateway__disable_plaintext_auth else 'no' }}"
     regexp: ^\#?disable_plaintext_auth
     backup: yes
   notify: restart kopano-gateway
